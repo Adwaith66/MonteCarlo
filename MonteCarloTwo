@@ -1,0 +1,152 @@
+#create a monty carlo tree search algorith that plays the game of 'connect two' in a 1x4 board
+import pygame
+from pygame.locals import K_DOWN, K_UP, K_LEFT, K_RIGHT, K_ESCAPE, \
+    KEYDOWN, QUIT
+    
+pygame.init()
+
+class MonteCarlo:
+    def __init__(self, board):
+        self.root = Node(board, 1)
+    def run(self):
+        pass
+    def simualte(self):
+        pass
+
+class Node:
+    def __init__(self, state, player):
+        self.game = ConnectTwo()
+        self.game.board = state
+        self.game.currentplayer = player
+        self.value = 0
+        self.expanded = False
+
+
+    def generate_legal(self):
+        legal_moves = []
+        for i in range(len(self.game.board)):
+            template = [0,0,0,0]
+            if self.game.board[i] == 0:
+                template[i] = self.game.currentplayer
+                legal_moves.append(template)
+            
+            
+        return legal_moves
+
+    
+
+class ConnectTwo:
+    def __init__(self):
+        self.board = [0,0,0,0]
+        self.currentplayer = 1
+        self.gameOver = False
+        self.winner = None
+
+    def move(self, pos):
+        print('input',pos)
+        if(pos[0] == 1):
+            if self.board[0] == 0:
+                print('statemnt ran')
+                self.board[0] = self.currentplayer
+                self.currentplayer = -self.currentplayer
+            else:
+                print('Invalid Move')
+        if(pos[1] == 1):
+            if self.board[1] == 0:
+                self.board[1] = self.currentplayer
+                self.currentplayer = -self.currentplayer
+
+            else:
+                print('Invalid Move')
+        if(pos[2] == 1):
+            if self.board[2] == 0:
+                self.board[2] = self.currentplayer
+                self.currentplayer = -self.currentplayer
+
+            else:
+                print('Invalid Move')
+        if(pos[3] == 1):
+            if self.board[3] == 0:
+                self.board[3] = self.currentplayer
+                self.currentplayer = -self.currentplayer
+            else:
+                print('Invalid Move')
+        node = Node(self.board, self.currentplayer)
+        print(node.generate_legal())
+        self.calcWin()
+            
+    
+
+    def calcWin(self):
+        noZeroes = True
+        index = 0
+        for i in self.board:
+            if i==0:
+                noZeroes = False
+                print('i', i)
+            if self.board[index] == self.board[index-1] and self.board[index]!=0:
+                if index != 0:
+                    print('Game Over, Player', -self.currentplayer, 'Wins!')
+                    print('Index', index)
+                    self.winner = -self.currentplayer
+                    self.gameOver = True
+            index+=1
+    
+        if noZeroes:
+            self.gameOver = True
+
+            
+
+    
+
+    
+    
+
+
+board = ConnectTwo()
+
+
+
+
+
+
+window = pygame.display.set_mode((400, 100))
+window.fill((125, 125, 125))
+running = True
+while not board.gameOver:
+    pygame.event.pump()
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            board.gameOver=True
+        elif event.type == KEYDOWN:
+            print(event.key)
+            if event.key == K_ESCAPE:
+                board.gameOver=True
+            if event.key == 49:
+                board.move([1,0,0,0])
+                print(board.board)
+            if event.key == 50:
+                board.move([0,1,0,0])
+                print(board.board)
+                
+            if event.key == 51:
+                board.move([0,0,1,0])
+                print(board.board)
+            if event.key == 52:
+                board.move([0,0,0,1])
+                print(board.board)
+    index = 0
+    for i in board.board:
+        if i!=0:
+            if(i==1):
+                pygame.draw.circle(window, (150, 0, 0), (100*index+50, 50), 10, 100)
+            else:
+                pygame.draw.circle(window, (0, 0, 150), (100*index+50, 50), 10, 100)
+        index+=1
+            
+                
+            
+    pygame.display.update()
+print(board.winner)
+
+ 
