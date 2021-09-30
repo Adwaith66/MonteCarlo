@@ -1,39 +1,139 @@
 #create a monty carlo tree search algorith that plays the game of 'connect two' in a 1x4 board
+from types import prepare_class
 import pygame
 from pygame.locals import K_DOWN, K_UP, K_LEFT, K_RIGHT, K_ESCAPE, \
     KEYDOWN, QUIT
-    
+from datetime import datetime, timedelta
+import random
+import math
+
 pygame.init()
 
 class MonteCarlo:
-    def __init__(self, board):
-        self.root = Node(board, 1)
-    def run(self):
-        pass
-    def simualte(self):
-        pass
+    def __init__(self, board, player):
+        self.root = Node(board, player)
+        self.nodes = []
+
+    def traverse(self):
+        now = datetime.now()
+        nodes = [self.root]
+        #nodes[0].generate_legal()
+        #self.root.generate_legal()
+
+            
+        #self.root.simulate()
+        #self.root.children[0].simulate()
+        #self.root.back_propogate()
+        #print("VALUE:", self.root.value)
+        while True:
+            if datetime.now() <= now + timedelta(seconds = 1):
+            #print('Time', datetime.now, 'New Time', timedelta(seconds = 2))
+            #nodes[-1].expanded == False
+                if(True):#type(nodes[-1]) == Node
+                    nodes[-1].generate_legal()
+                    for node in nodes[-1].children:
+                        node.simulate()
+                        node.expanded = True
+                        print('CHILDREN', node.game.board)
+
+            else:
+                break
+        max = -10
+        maxInd= 0
+        index = 0
+        for n in nodes[-1].children:
+            print(n.calcValue())
+            if n.calcValue()>max:
+                maxInd = index
+                max = n.calcValue()
+            index+=1
+        #print('MAX', maxInd, "value", max)
+        return nodes[-1].children[maxInd]
+
+
+    def ucb(self, children):
+        bounds = []
+        for child in children:
+            if(child.parent.visits>0 and child.visits>0):
+                bounds.append(child.value * math.log(child.parent.visits/child.visits)**0.5)
+               
+            else:
+                bounds.append(child.value)
+
+        return children[bounds.index(max(bounds))]
+            
+
 
 class Node:
-    def __init__(self, state, player):
+    def __init__(self, state: list, player: int, parent = None):
         self.game = ConnectTwo()
         self.game.board = state
         self.game.currentplayer = player
         self.value = 0
         self.expanded = False
+        self.children = []
+        self.visits = 0
+        self.parent = parent
 
 
-    def generate_legal(self):
-        legal_moves = []
-        for i in range(len(self.game.board)):
-            template = [0,0,0,0]
-            if self.game.board[i] == 0:
-                template[i] = self.game.currentplayer
-                legal_moves.append(template)
-            
-            
-        return legal_moves
+    def calcValue(self):
+        if(self.visits>0):
+            return self.value/self.visits 
+        return self.value
 
-    
+    #legal move generation. given no input, sets node.children equal to all possible next board states. Sets 'Expanded' To True, but this functionality might change
+    def generate_legal(self) -> None:
+        if len(self.children) == 0:
+            #print("CURRENT:", self.game.currentplayer)
+            temp_board = ConnectTwo()
+            for i in range(len(self.game.board)):
+                template = [0,0,0,0]
+                temp_board.board = self.game.board[:]
+                if self.game.board[i] == 0:
+                    template[i] = 1
+                    #print('CURRENT', self.game.currentplayer)
+                    #print('TEMPLATE', template)
+                    temp_board.currentplayer = self.game.currentplayer
+                    temp_board.move(template)
+                    self.children.append(Node(temp_board.board, temp_board.currentplayer, self))
+                    #print("CURRENT PLAYER???", self.children[-1].game.currentplayer)
+                    #print("PARENT:", self.children[-1].parent.game.board)
+            #for a in self.children:
+                #print('LEGAL', a.game.board)
+            self.expanded = True
+        return self.children
+
+    def back_propogate(self, value) -> None:
+        if self.parent is None:
+            return None
+        #print("PARENT:", self.parent.game.board)
+        self.parent.value+=value
+        #print(self.parent.value, self.parent.game.board)
+        self.parent.visits+=1
+        return self.parent.back_propogate(value)
+
+    def simulate(self):
+        self.generate_legal()
+        temp_value = self.game.calcWin()
+        if self.game.gameOver:
+            #self.value+=temp_value
+            self.value = temp_value
+            print('SIM OVER', self.value)
+            self.back_propogate(self.value)
+            return self.value
+        else:
+            temp_node = self.rollout_policy()
+            #print('NEW PLAYER', temp_node.game.currentplayer)
+            print('RANDOM CHILD', temp_node.game.board)
+            return temp_node.simulate()
+
+
+    def rollout_policy(self):
+        rand = random.choice(self.children)
+        return rand
+
+
+
 
 class ConnectTwo:
     def __init__(self):
@@ -42,11 +142,9 @@ class ConnectTwo:
         self.gameOver = False
         self.winner = None
 
-    def move(self, pos):
-        print('input',pos)
+    def move(self, pos: list):
         if(pos[0] == 1):
             if self.board[0] == 0:
-                print('statemnt ran')
                 self.board[0] = self.currentplayer
                 self.currentplayer = -self.currentplayer
             else:
@@ -71,11 +169,12 @@ class ConnectTwo:
                 self.currentplayer = -self.currentplayer
             else:
                 print('Invalid Move')
-        node = Node(self.board, self.currentplayer)
-        print(node.generate_legal())
+
         self.calcWin()
-            
-    
+
+
+
+
 
     def calcWin(self):
         noZeroes = True
@@ -83,24 +182,25 @@ class ConnectTwo:
         for i in self.board:
             if i==0:
                 noZeroes = False
-                print('i', i)
             if self.board[index] == self.board[index-1] and self.board[index]!=0:
                 if index != 0:
-                    print('Game Over, Player', -self.currentplayer, 'Wins!')
-                    print('Index', index)
+                    #print('Game Over, Player', -self.currentplayer, 'Wins!')
                     self.winner = -self.currentplayer
                     self.gameOver = True
+                    return self.winner
             index+=1
-    
+        
+
         if noZeroes:
             self.gameOver = True
+            return 0
 
-            
 
-    
 
-    
-    
+
+
+
+
 
 
 board = ConnectTwo()
@@ -114,12 +214,23 @@ window = pygame.display.set_mode((400, 100))
 window.fill((125, 125, 125))
 running = True
 while not board.gameOver:
+
+
     pygame.event.pump()
     for event in pygame.event.get():
         if event.type == QUIT:
             board.gameOver=True
         elif event.type == KEYDOWN:
-            print(event.key)
+            if event.key == K_RIGHT:
+                mc = MonteCarlo(board.board, board.currentplayer)
+                pos = mc.traverse()
+                board.board = pos.game.board
+                board.currentplayer = -board.currentplayer
+                board.calcWin()
+                #n = Node(board.board, board.currentplayer)
+                #n2 = n.simulate()
+                #n3 = n2.simulate()
+                    
             if event.key == K_ESCAPE:
                 board.gameOver=True
             if event.key == 49:
@@ -128,7 +239,7 @@ while not board.gameOver:
             if event.key == 50:
                 board.move([0,1,0,0])
                 print(board.board)
-                
+
             if event.key == 51:
                 board.move([0,0,1,0])
                 print(board.board)
@@ -143,10 +254,13 @@ while not board.gameOver:
             else:
                 pygame.draw.circle(window, (0, 0, 150), (100*index+50, 50), 10, 100)
         index+=1
-            
-                
-            
+
+
+
     pygame.display.update()
+
+
+
+
 print(board.winner)
 
- 
