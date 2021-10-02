@@ -1,5 +1,4 @@
 #create a monty carlo tree search algorith that plays the game of 'connect two' in a 1x4 board
-from types import prepare_class
 import pygame
 from pygame.locals import K_DOWN, K_UP, K_LEFT, K_RIGHT, K_ESCAPE, \
     KEYDOWN, QUIT
@@ -100,7 +99,6 @@ class Node:
                     #print("PARENT:", self.children[-1].parent.game.board)
             #for a in self.children:
                 #print('LEGAL', a.game.board)
-            self.expanded = True
         return self.children
 
     def back_propogate(self, value) -> None:
@@ -137,7 +135,7 @@ class Node:
 
 class ConnectTwo:
     def __init__(self):
-        self.board = [0,0,0,0]
+        self.board = [0, 0, 0, 0]
         self.currentplayer = 1
         self.gameOver = False
         self.winner = None
@@ -222,13 +220,13 @@ while not board.gameOver:
             board.gameOver=True
         elif event.type == KEYDOWN:
             if event.key == K_RIGHT:
-                mc = MonteCarlo(board.board, board.currentplayer)
-                pos = mc.traverse()
-                board.board = pos.game.board
-                board.currentplayer = -board.currentplayer
-                board.calcWin()
-                #n = Node(board.board, board.currentplayer)
-                #n2 = n.simulate()
+                #mc = MonteCarlo(board.board, board.currentplayer)
+                #pos = mc.traverse()
+                #board.board = pos.game.board
+                #board.currentplayer = -board.currentplayer
+                #board.calcWin()
+                n = Node(board.board, board.currentplayer)
+                n2 = n.generate_legal()
                 #n3 = n2.simulate()
                     
             if event.key == K_ESCAPE:
