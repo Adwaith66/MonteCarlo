@@ -3,6 +3,8 @@ from pygame.locals import K_DOWN, K_UP, K_LEFT, K_RIGHT, K_ESCAPE, \
     KEYDOWN, QUIT
 import numpy as np
 import random
+from datetime import datetime, timedelta
+import copy
 
 pygame.init()
 
@@ -16,6 +18,24 @@ pygame.draw.line(window, (0,0,0), (200, 25), (200, 275), 1)
 pygame.draw.line(window, (0,0,0), (25, 100), (275, 100), 1)
 pygame.draw.line(window, (0,0,0), (25, 200), (275, 200), 1)
 
+class MonteCarlo:
+    def __init__(self, board, player):
+        self.root = Node(board, player)
+        self.nodes = []
+
+    def traverse(self):
+        now = datetime.now()
+        #while datetime.now() <= now + timedelta(seconds = 2):
+        for i in range(15):
+            best_node = self.root.select_best_node(self.root.game.player)
+            best_node.expanded = True
+            best_node.simulate()
+        
+        child_values = list(map(lambda x: x.value, self.root.children))
+        print(child_values)
+        #self.root = self.root.children[child_values.index(max(child_values))]
+        return self.root.children[child_values.index(max(child_values))]
+
 
 class Node:
     def __init__(self, state, player, parent=None):
@@ -26,6 +46,7 @@ class Node:
         self.parent = parent
         self.value = 0
         self.visits = 0
+        self.expanded = False
 
     def generate_legal(self):
         temp_board = TicTacToe()
@@ -38,7 +59,6 @@ class Node:
                     temp_board.board = self.game.board.copy()
                     temp_board.player = self.game.player
                     if self.game.board[i][j] == 0:
-                        print('i', i, "j", j)
                         template[i][j] = 1
                         temp_board.place(template)
                         self.children.append(Node(temp_board.board, temp_board.player, self))
@@ -50,7 +70,8 @@ class Node:
         if self.game.game_over:
             self.value = temp_value
             print('SIM OVER', self.value)
-            #self.back_propogate(self.value)
+            self.visits+=1
+            self.back_propogate(self.value)
             return self.value
         else:
             temp_node = self.rollout_policy()
@@ -59,13 +80,57 @@ class Node:
             return temp_node.simulate()
 
     def calc_value(self):
-        pass
+        if(self.visits>0):
+            return self.value/self.visits 
+        return -100
+
+
     def rollout_policy(self):
         rand = random.choice(self.children)
-        print("Choice", rand.game.board)
+        #print("Choice", rand.game.board)
         return rand
-    def back_propogate(self):
-        pass
+
+    def back_propogate(self, value):
+        if self.parent is None:
+            return None
+        #print("PARENT:", self.parent.game.board)
+        self.parent.value+=value
+        #print('VALUE', self.parent.value)
+        self.parent.visits+=1
+        return self.parent.back_propogate(value)
+    
+    def select_best_node(self, player):
+        best_node = copy.copy(self)
+        best_node.generate_legal()
+        while len(best_node.children)>0:
+            best_node = best_node.select_best_child(player)
+            print("BEST NODE ", best_node.game.board)
+            print("VALUE", best_node.value)
+            player=-player
+            if(best_node.expanded==False):
+                break
+        return best_node
+
+    def select_best_child(self, player):
+        ucb_array = []
+        for child in self.children:
+            ucb_array.append(child.get_ucb())
+            #print('UCB', child.get_ucb())
+        if player == 1:
+            return self.children[ucb_array.index(max(ucb_array))]
+        else:
+            return self.children[ucb_array.index(min(ucb_array))]
+
+    def get_ucb(self):
+        if self.expanded == False:
+            return 1000
+        else:
+            #print('Value', self.value, 'Visits', self.visits, 'Parent Value', self.parent.value, 'Parent Visits', self.parent.visits)
+            uct = self.value/self.visits + np.sqrt(2) * np.sqrt(np.log(self.parent.visits)/self.visits)
+        return uct
+
+            
+            
 
 
 
@@ -92,27 +157,33 @@ class TicTacToe:
         tempBoard = self.board
         for i in range(3):
             if sum(tempBoard[i]) == 3 or sum(tempBoard[i]) == -3:
-                print('The winner is', -self.player)
-                self.winner = -self.player
+                #print('The winner is', -self.player)
                 self.game_over = True
 
         tempBoard = np.transpose(self.board)
 
         for i in range(3):
             if sum(tempBoard[i]) == 3 or sum(tempBoard[i]) == -3:
-                print('The winner is', -self.player)
+                #print('The winner is', -self.player)
                 self.game_over = True
-                self.winner = -self.player
 
         if (self.board[0][0] == self.board[1][1] == self.board[2][2] == 1 or self.board[0][0] == self.board[1][1] == self.board[2][2] == -1):
-            print('The winner is', -self.player)
-            self.winner = -self.player
+            #print('The winner is', -self.player)
             self.game_over = True
         
         if self.board[2][0] == self.board[1][1] == self.board[0][2] == 1 or self.board[2][0] == self.board[1][1] == self.board[0][2] == -1:
-            print('The winner is', -self.player)
+            #print('The winner is', -self.player)
             self.game_over = True
+        
+        result = np.all((self.board != 0))
+        if(result):
+            self.game_over = True
+            self.player = 0
+
+        if self.game_over == True:
             self.winner = -self.player
+            return self.winner
+
         
 
 
@@ -132,6 +203,12 @@ while not board.game_over:
         elif event.type == KEYDOWN:
             if event.key == K_ESCAPE:
                 board.game_over=True
+            elif event.key == K_RIGHT:
+                mc = MonteCarlo(board.board, board.player)
+                pos = mc.traverse()
+                board.board = pos.game.board
+                board.player = -board.player
+                board.checkWin()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             pos = pygame.mouse.get_pos()
             col = pos[0]//SQUARE_SIZE
@@ -139,21 +216,24 @@ while not board.game_over:
             template[row][col] = 1
             board.place(template)
             board.checkWin()
-            node = Node(board.board, board.player)
-            node.generate_legal()
-            node.simulate()
-            print('GAME BOARD', board.board)
-            for i in range(3):
-                for j in range(3):
-                    if(board.board[i][j]!=0):
-                        if(board.board[i][j]==1):
-                            pygame.draw.circle(window, (150,0,0), (100*j+50, 100*i+50), 10, 199)
-                        else:
-                            pygame.draw.circle(window, (0,0,150), (100*j+50, 100*i+50), 10, 199)
+            
+
+            #print('GAME BOARD', board.board)
+        for i in range(3):
+            for j in range(3):
+                if(board.board[i][j]!=0):
+                    if(board.board[i][j]==1):
+                        pygame.draw.circle(window, (150,0,0), (100*j+50, 100*i+50), 10, 199)
+                    else:
+                        pygame.draw.circle(window, (0,0,150), (100*j+50, 100*i+50), 10, 199)
+        
             
 
 
     pygame.display.update()
                
+clearConsole = lambda: print('\n' * 150)
 
+clearConsole()
 
+print("WINNER", board.winner)
