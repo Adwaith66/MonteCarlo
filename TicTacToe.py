@@ -25,7 +25,7 @@ class MonteCarlo:
 
     def traverse(self):
         now = datetime.now()
-        #while datetime.now() <= now + timedelta(seconds = 2):
+        #while datetime.now() <= now + timedelta(seconds = 2):asdf
         for i in range(15):
             best_node = self.root.select_best_node(self.root.game.player)
             best_node.expanded = True
