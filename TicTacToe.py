@@ -25,8 +25,8 @@ class MonteCarlo:
 
     def traverse(self):
         now = datetime.now()
-        #while datetime.now() <= now + timedelta(seconds = 2):asdf
-        for i in range(15):
+        while datetime.now() <= now + timedelta(seconds = 1):
+        #for i in range(15):
             best_node = self.root.select_best_node(self.root.game.player)
             best_node.expanded = True
             best_node.simulate()
@@ -101,8 +101,8 @@ class Node:
     
     def select_best_node(self, player):
         best_node = copy.copy(self)
-        best_node.generate_legal()
         while len(best_node.children)>0:
+            best_node.generate_legal()
             best_node = best_node.select_best_child(player)
             print("BEST NODE ", best_node.game.board)
             print("VALUE", best_node.value)
