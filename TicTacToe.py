@@ -31,7 +31,7 @@ class MonteCarlo:
             best_node.expanded = True
             best_node.simulate()
         
-        child_values = list(map(lambda x: x.value, self.root.children))
+        child_values = list(map(lambda x: x.visits, self.root.children))
         print(child_values)
         #self.root = self.root.children[child_values.index(max(child_values))]
         return self.root.children[child_values.index(max(child_values))]
@@ -104,30 +104,33 @@ class Node:
         while len(best_node.children)>0:
             best_node.generate_legal()
             best_node = best_node.select_best_child(player)
-            print("BEST NODE ", best_node.game.board)
-            print("VALUE", best_node.value)
+            print("VALUE", best_node.get_ucb(player))
             player=-player
             if(best_node.expanded==False):
                 break
+        print("BEST NODE ", best_node.game.board)
         return best_node
 
     def select_best_child(self, player):
         ucb_array = []
         for child in self.children:
-            ucb_array.append(child.get_ucb())
+            ucb_array.append(child.get_ucb(player))
             #print('UCB', child.get_ucb())
-        if player == 1:
-            return self.children[ucb_array.index(max(ucb_array))]
-        else:
-            return self.children[ucb_array.index(min(ucb_array))]
+        return self.children[ucb_array.index(max(ucb_array))]
 
-    def get_ucb(self):
+    def get_ucb(self, player):
+        temp_value = self.value
         if self.expanded == False:
             return 1000
         else:
             #print('Value', self.value, 'Visits', self.visits, 'Parent Value', self.parent.value, 'Parent Visits', self.parent.visits)
-            uct = self.value/self.visits + np.sqrt(2) * np.sqrt(np.log(self.parent.visits)/self.visits)
-        return uct
+            if player == -1:
+                temp_value = -self.value
+            uct = temp_value/self.visits + np.sqrt(2) * np.sqrt(np.log(self.parent.visits)/self.visits)
+            return uct
+
+
+
 
             
             
@@ -167,22 +170,22 @@ class TicTacToe:
                 #print('The winner is', -self.player)
                 self.game_over = True
 
-        if (self.board[0][0] == self.board[1][1] == self.board[2][2] == 1 or self.board[0][0] == self.board[1][1] == self.board[2][2] == -1):
+        if (self.board[0][0] == 1 and self.board[1][1] == 1 and self.board[2][2] == 1) or (self.board[0][0] == -1 and self.board[1][1] == -1 and self.board[2][2] == -1):
             #print('The winner is', -self.player)
             self.game_over = True
         
-        if self.board[2][0] == self.board[1][1] == self.board[0][2] == 1 or self.board[2][0] == self.board[1][1] == self.board[0][2] == -1:
+        if (self.board[2][0] == 1 and self.board[1][1] == 1 and self.board[0][2] == 1) or (self.board[2][0] == -1 and self.board[1][1] == -1 and self.board[0][2] == -1):
             #print('The winner is', -self.player)
             self.game_over = True
         
         result = np.all((self.board != 0))
-        if(result):
-            self.game_over = True
-            self.player = 0
-
+       
         if self.game_over == True:
             self.winner = -self.player
-            return self.winner
+            return -self.player
+        if(result):
+            self.game_over = True
+            return 0
 
         
 
