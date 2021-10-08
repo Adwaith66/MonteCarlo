@@ -22,19 +22,40 @@ class MonteCarlo:
     def __init__(self, board, player):
         self.root = Node(board, player)
         self.nodes = []
+        self.root.generate_legal()
+
 
     def traverse(self):
         now = datetime.now()
-        while datetime.now() <= now + timedelta(seconds = 1):
-        #for i in range(15):
-            best_node = self.root.select_best_node(self.root.game.player)
-            best_node.expanded = True
-            best_node.simulate()
+        #while datetime.now() <= now + timedelta(seconds = 1000):
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == KEYDOWN:
+                    if event.key == K_LEFT:
+            #for i in range(15):
+                        best_node = self.root.select_best_node(self.root.game.player)
+                        best_node.expanded = True
+                        best_node.simulate()
+                        print("NEW VALUE OF BEST NODE", best_node.value, "VISITS", best_node.visits)
+                        print(list(map(lambda x: x.calc_value(), self.root.children)))
+                    elif event.key == K_UP:
+                        while datetime.now() <= now + timedelta(seconds = 1):
+                            best_node = self.root.select_best_node(self.root.game.player)
+                            best_node.expanded = True
+                            best_node.simulate()
+                            print("NEW VALUE OF BEST NODE", best_node.value, "VISITS", best_node.visits)
+                            print(list(map(lambda x: x.calc_value(), self.root.children)))
+                        break
+                elif event.type == QUIT:
+                    running = False
         
-        child_values = list(map(lambda x: x.visits, self.root.children))
-        print(child_values)
+        
+        child_values = list(map(lambda x: x.value, self.root.children))
+        #print(child_values)
         #self.root = self.root.children[child_values.index(max(child_values))]
         return self.root.children[child_values.index(max(child_values))]
+
 
 
 class Node:
@@ -68,8 +89,8 @@ class Node:
         self.generate_legal()
         temp_value = self.game.checkWin()
         if self.game.game_over:
-            self.value = temp_value
-            print('SIM OVER', self.value)
+            self.value += temp_value
+            #print('SIM OVER', self.value)
             self.visits+=1
             self.back_propogate(self.value)
             return self.value
@@ -101,13 +122,16 @@ class Node:
     
     def select_best_node(self, player):
         best_node = copy.copy(self)
+        best_node.generate_legal()
         while len(best_node.children)>0:
             best_node.generate_legal()
-            best_node = best_node.select_best_child(player)
-            print("VALUE", best_node.get_ucb(player))
-            player=-player
-            if(best_node.expanded==False):
-                break
+            temp_node = best_node.select_best_child(player)
+            temp_node.generate_legal()
+            if len(temp_node.children)>0:
+            #print("VALUE", best_node.get_ucb(player))
+                player=-player
+                if(best_node.expanded==False):
+                    break
         print("BEST NODE ", best_node.game.board)
         return best_node
 
@@ -126,7 +150,7 @@ class Node:
             #print('Value', self.value, 'Visits', self.visits, 'Parent Value', self.parent.value, 'Parent Visits', self.parent.visits)
             if player == -1:
                 temp_value = -self.value
-            uct = temp_value/self.visits + np.sqrt(2) * np.sqrt(np.log(self.parent.visits)/self.visits)
+            uct = temp_value/self.visits + (np.sqrt(2) * np.sqrt(np.log(self.parent.visits)/self.visits))
             return uct
 
 
