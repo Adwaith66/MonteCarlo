@@ -27,30 +27,12 @@ class MonteCarlo:
 
     def traverse(self):
         now = datetime.now()
-        #while datetime.now() <= now + timedelta(seconds = 1000):
-        running = True
-        while running:
-            for event in pygame.event.get():
-                if event.type == KEYDOWN:
-                    if event.key == K_LEFT:
-            #for i in range(15):
-                        best_node = self.root.select_best_node(self.root.game.player)
-                        best_node.expanded = True
-                        best_node.simulate()
-                        print("NEW VALUE OF BEST NODE", best_node.value, "VISITS", best_node.visits)
-                        print(list(map(lambda x: x.calc_value(), self.root.children)))
-                    elif event.key == K_UP:
-                        while datetime.now() <= now + timedelta(seconds = 1):
-                            best_node = self.root.select_best_node(self.root.game.player)
-                            best_node.expanded = True
-                            best_node.simulate()
-                            print("NEW VALUE OF BEST NODE", best_node.value, "VISITS", best_node.visits)
-                            print(list(map(lambda x: x.calc_value(), self.root.children)))
-                        break
-                elif event.type == QUIT:
-                    running = False
-        
-        
+        while datetime.now() <= now + timedelta(seconds = 1000):
+            best_node = self.root.select_best_node(self.root.game.player)
+            best_node.expanded = True
+            best_node.simulate()
+            print("NEW VALUE OF BEST NODE", best_node.value, "VISITS", best_node.visits)
+            print(list(map(lambda x: x.calc_value(), self.root.children)))   
         child_values = list(map(lambda x: x.value, self.root.children))
         #print(child_values)
         #self.root = self.root.children[child_values.index(max(child_values))]
