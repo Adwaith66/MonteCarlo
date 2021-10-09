@@ -5,6 +5,7 @@ import numpy as np
 import random
 from datetime import datetime, timedelta
 import copy
+import random
 
 pygame.init()
 
@@ -27,16 +28,36 @@ class MonteCarlo:
 
     def traverse(self):
         now = datetime.now()
-        while datetime.now() <= now + timedelta(seconds = 1000):
+        """while datetime.now() <= now + timedelta(seconds = 1):
             best_node = self.root.select_best_node(self.root.game.player)
             best_node.expanded = True
             best_node.simulate()
+            print('BOOLEAN' , bool(best_node is a for a in self.root.children))
             print("NEW VALUE OF BEST NODE", best_node.value, "VISITS", best_node.visits)
             print(list(map(lambda x: x.calc_value(), self.root.children)))   
-        child_values = list(map(lambda x: x.value, self.root.children))
+        child_values = list(map(lambda x: x.calc_value(), self.root.children))
+        for i in self.root.children:
+            print('child board', i.game.board)"""
+        for i in range(20):
+            self.root.children[3].simulate()
+            #print("OG", self.root.children[3].value)
+
+        num2 = self.root.children[3].select_best_node(self.root.children[3].game.player)
+        print("SAME", num2.parent is self.root.children[3])
+        print("SAME", num2.parent.game.board is self.root.children[3].game.board)
+
+       # print("OG BOARD", num2.game.board)
+        for i in range (20):
+           # print("VALUE RN", num2.value)
+            num2.simulate()
+            print('Original', self.root.children[3].value, 'Copy', num2.value)
+            #print("COpy Winner", num2.game.winner, num2.game.player)
+        print(self.root.children[3].calc_value())
+
+
+        
         #print(child_values)
-        #self.root = self.root.children[child_values.index(max(child_values))]
-        return self.root.children[child_values.index(max(child_values))]
+        #return self.root.children[child_values.index(max(child_values))]
 
 
 
@@ -65,24 +86,29 @@ class Node:
                         template[i][j] = 1
                         temp_board.place(template)
                         self.children.append(Node(temp_board.board, temp_board.player, self))
-                
+        
+        self.game.checkWin()
+        if (self.game.game_over):
+            self.children = []
 
     def simulate(self):
         self.generate_legal()
-        temp_value = self.game.checkWin()
+        self.game.checkWin()
         if self.game.game_over:
-            self.value += temp_value
-            #print('SIM OVER', self.value)
+            #self.game.winner=-self.game.winner
+            self.value += self.game.winner
+            #print(self.game.winner, "is being backpropogated")
             self.visits+=1
-            self.back_propogate(self.value)
+            self.back_propogate(self.game.winner)
             return self.value
         else:
             temp_node = self.rollout_policy()
             #print('NEW PLAYER', temp_node.game.currentplayer)
-            print('RANDOM CHILD', temp_node.game.board)
+            #print('RANDOM CHILD', temp_node.game.board)
             return temp_node.simulate()
 
     def calc_value(self):
+        #print('visits:', self.visits, 'value', self.value)
         if(self.visits>0):
             return self.value/self.visits 
         return -100
@@ -95,6 +121,8 @@ class Node:
 
     def back_propogate(self, value):
         if self.parent is None:
+
+            #print(self.game.board, "HAS NO PARENT")
             return None
         #print("PARENT:", self.parent.game.board)
         self.parent.value+=value
@@ -103,18 +131,23 @@ class Node:
         return self.parent.back_propogate(value)
     
     def select_best_node(self, player):
-        best_node = copy.copy(self)
+        best_node = self
         best_node.generate_legal()
         while len(best_node.children)>0:
             best_node.generate_legal()
-            temp_node = best_node.select_best_child(player)
+            temp_node = best_node.select_best_child(player) 
             temp_node.generate_legal()
-            if len(temp_node.children)>0:
-            #print("VALUE", best_node.get_ucb(player))
-                player=-player
-                if(best_node.expanded==False):
-                    break
-        print("BEST NODE ", best_node.game.board)
+            #print("OPTONS", len(temp_node.children))
+            if len(temp_node.children)==0:
+                #print("BEST NODE ", best_node.game.board)
+                return best_node
+            else:
+                best_node = 5
+                best_node = temp_node
+
+            if(best_node.expanded==False):
+                break
+        #print("BEST NODE ", best_node.game.board)
         return best_node
 
     def select_best_child(self, player):
@@ -132,7 +165,7 @@ class Node:
             #print('Value', self.value, 'Visits', self.visits, 'Parent Value', self.parent.value, 'Parent Visits', self.parent.visits)
             if player == -1:
                 temp_value = -self.value
-            uct = temp_value/self.visits + (np.sqrt(2) * np.sqrt(np.log(self.parent.visits)/self.visits))
+            uct = temp_value/self.visits + (np.sqrt(2) * np.sqrt(np.log(self.parent.visits)/self.visits)) 
             return uct
 
 
@@ -185,13 +218,15 @@ class TicTacToe:
             self.game_over = True
         
         result = np.all((self.board != 0))
+
+
        
         if self.game_over == True:
             self.winner = -self.player
-            return -self.player
+            return self.winner
         if(result):
             self.game_over = True
-            return 0
+            return self.winner
 
         
 
@@ -215,9 +250,9 @@ while not board.game_over:
             elif event.key == K_RIGHT:
                 mc = MonteCarlo(board.board, board.player)
                 pos = mc.traverse()
-                board.board = pos.game.board
-                board.player = -board.player
-                board.checkWin()
+               # board.board = pos.game.board
+               # board.player = -board.player
+               # board.checkWin()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             pos = pygame.mouse.get_pos()
             col = pos[0]//SQUARE_SIZE
