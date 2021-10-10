@@ -33,6 +33,8 @@ draw_board()
 x  = pygame.transform.scale(pygame.image.load('TicTacToeImages/X.png'), (SQUARE_SIZE-DILUTE,SQUARE_SIZE-DILUTE))
 o  = pygame.transform.scale(pygame.image.load('TicTacToeImages/O.png'), (SQUARE_SIZE-DILUTE,SQUARE_SIZE-DILUTE))
 greyO = pygame.transform.scale(pygame.image.load('TicTacToeImages/greyerO.png'), (SQUARE_SIZE-DILUTE,SQUARE_SIZE-DILUTE))
+greyX = pygame.transform.scale(pygame.image.load('TicTacToeImages/greyerX.png'), (SQUARE_SIZE-DILUTE,SQUARE_SIZE-DILUTE))
+
 
 
 class MonteCarlo:
@@ -258,14 +260,25 @@ while KeepPlaying:
 
 
         pygame.display.update()
+    
+    newDispX = x
+    newDispO = o
+    if board.winner == 1:
+        newDispO = greyO
+    elif board.winner == -1:
+        newDispX = greyX
+    else:
+        newDispO = greyO
+        newDispX = greyX
+
 
     for i in range(3):
                 for j in range(3):
                     if(board.board[i][j]!=0):
                         if(board.board[i][j]==1):
-                            window.blit(x, (SQUARE_SIZE*j+MARGIN+DILUTE//2, SQUARE_SIZE*i+MARGIN+DILUTE//2))
+                            window.blit(newDispX, (SQUARE_SIZE*j+MARGIN+DILUTE//2, SQUARE_SIZE*i+MARGIN+DILUTE//2))
                         else:
-                            window.blit(greyO, (SQUARE_SIZE*j+MARGIN+DILUTE//2, SQUARE_SIZE*i+MARGIN+DILUTE//2))
+                            window.blit(newDispO, (SQUARE_SIZE*j+MARGIN+DILUTE//2, SQUARE_SIZE*i+MARGIN+DILUTE//2))
     pygame.display.update()
     pygame.event.pump()
     inquiring = True
