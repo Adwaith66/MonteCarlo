@@ -174,6 +174,7 @@ class TicTacToe:
         if self.board[row][col] == 0:
             self.board[row][col] = self.player
             self.player = -self.player
+        self.checkWin()
 
     def checkWin(self):
         tempBoard = self.board
@@ -227,6 +228,8 @@ while KeepPlaying:
             board.board = pos.game.board
             board.player = -board.player
             board.checkWin()
+            if board.game_over:
+                break
 
         for event in pygame.event.get():
             if event.type == QUIT:
